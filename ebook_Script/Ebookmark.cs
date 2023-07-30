@@ -5,8 +5,10 @@ using UnityEngine;
 public class Ebookmark : MonoBehaviour
 {
     public Sprite icon;
-    private int length_ebookmark;
     public GameObject prefab_item_ebookmark;
+
+    private int length_ebookmark;
+    private Carrot.Carrot_Box list_box_ebookmark = null;
 
     public void load_ebook_mark()
     {
@@ -31,17 +33,15 @@ public class Ebookmark : MonoBehaviour
             return;
         }
 
-        this.GetComponent<App>().carrot.show_list_box(PlayerPrefs.GetString("danh_dau", "Bookmark"), this.icon);
+        if (this.list_box_ebookmark != null) this.list_box_ebookmark.close();
+        this.list_box_ebookmark=this.GetComponent<App>().carrot.Create_Box(PlayerPrefs.GetString("danh_dau", "Bookmark"), this.icon);
         for (int i = 0; i < this.length_ebookmark; i++)
         {
             if (PlayerPrefs.GetString("ebookmark_" + i + "_name","") != "")
             {
-                GameObject item_ebookmark_info = Instantiate(this.prefab_item_ebookmark);
-                item_ebookmark_info.transform.SetParent(this.GetComponent<App>().carrot.area_body_box);
-                item_ebookmark_info.transform.localPosition = new Vector3(item_ebookmark_info.transform.localPosition.x, item_ebookmark_info.transform.localPosition.y, item_ebookmark_info.transform.localPosition.z);
-                item_ebookmark_info.transform.localScale = new Vector3(1f, 1f, 1f);
-                item_ebookmark_info.GetComponent<e_info_more_item>().txt_value.text = PlayerPrefs.GetString("ebookmark_" + i + "_name");
-                item_ebookmark_info.GetComponent<e_info_more_item>().index = i;
+                Carrot.Carrot_Box_Item item_mark=this.list_box_ebookmark.create_item("item_bookmark_" + i);
+                item_mark.set_title(PlayerPrefs.GetString("ebookmark_" + i + "_name"));
+                item_mark.set_tip(i.ToString());
             }
         }
     }

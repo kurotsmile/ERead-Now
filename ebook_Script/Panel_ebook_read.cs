@@ -1,3 +1,5 @@
+using Firebase.Extensions;
+using Firebase.Firestore;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -37,19 +39,33 @@ public class Panel_ebook_read : MonoBehaviour
     private string id_ebook;
     private int index_page = 0;
     private bool is_show_iu = true;
+    private Carrot.Carrot_Box list_box_index = null;
 
     public void read_book(string id_ebook)
     {
         this.id_ebook = id_ebook;
         this.gameObject.SetActive(true);
         this.panel_font_style.SetActive(false);
-        WWWForm frm_ebook =this.carrot.frm_act("read_ebook");
-        frm_ebook.AddField("id_ebook",id_ebook);
-        this.carrot.send(frm_ebook,this.act_read_ebook);
         this.btn_nav_prev.SetActive(false);
         this.scrollrect_eread_contain.normalizedPosition = new Vector2(this.scrollrect_eread_contain.normalizedPosition.x,1f);
         this.f_font_size = PlayerPrefs.GetInt("f_font_size", 16);
         this.f_font_family = PlayerPrefs.GetInt("f_font_family", 0);
+
+        carrot.db.Collection("ebook").Document(id_ebook).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            DocumentSnapshot docData=task.Result;
+            if (task.IsCompleted)
+            {
+                if (docData.Exists)
+                {
+                    IDictionary data_ebook = docData.ToDictionary();
+                }
+                else
+                {
+                    this.carrot.show_msg("Ebook", "EBook does not exist", Carrot.Msg_Icon.Alert);
+                }
+            }
+        });
     }
 
     private void act_read_ebook(string s_data)
@@ -72,30 +88,18 @@ public class Panel_ebook_read : MonoBehaviour
 
     public void show_list_index()
     {
-        this.carrot.show_list_box("The book's table of contents", this.icon_list_index);
+        if (this.list_box_index != null) this.list_box_index.close();
+        this.list_box_index=this.carrot.Create_Box("The book's table of contents", this.icon_list_index);
         for(int i = 0; i < this.list_nav.Count; i++)
         {
             IDictionary data_nav = (IDictionary)this.list_nav[i];
+            Carrot.Carrot_Box_Item item_index = this.list_box_index.create_item("item_" + i);
             IDictionary nav_name = (IDictionary)data_nav["name"];
             IDictionary nav_src = (IDictionary)data_nav["src"];
-            GameObject item_index_obj = Instantiate(this.Item_index_prefab);
-            item_index_obj.transform.SetParent(this.carrot.area_body_box);
-            item_index_obj.transform.localPosition = new Vector3(item_index_obj.transform.localPosition.x, item_index_obj.transform.localPosition.y, item_index_obj.transform.localPosition.z);
-            item_index_obj.transform.localScale = new Vector3(1f,1f,1f);
-            item_index_obj.GetComponent<eBook_index_item>().txt_name.text = nav_name["0"].ToString();
-            item_index_obj.GetComponent<eBook_index_item>().index_page = i;
+            item_index.set_title(data_nav["title"].ToString());
         }
     }
 
-    public void read_page(string s_url)
-    {
-        WWWForm frm_page = this.carrot.frm_act("read_ebook_page");
-        frm_page.AddField("id_ebook", this.id_ebook);
-        frm_page.AddField("url_page", s_url);
-        this.carrot.send(frm_page,this.act_read_page);
-        this.carrot.hide_box();
-        this.scrollrect_eread_contain.normalizedPosition = new Vector2(this.scrollrect_eread_contain.normalizedPosition.x, 1f);
-    }
 
     private void act_read_page(string s_data)
     {
@@ -124,7 +128,6 @@ public class Panel_ebook_read : MonoBehaviour
         this.index_page = index_p;
         IDictionary data_nav = (IDictionary)this.list_nav[index_p];
         IDictionary nav_src = (IDictionary)data_nav["src"];
-        this.read_page(nav_src["0"].ToString());
     }
 
     public void check_show_page_nav()

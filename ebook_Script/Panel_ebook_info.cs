@@ -1,3 +1,5 @@
+using Firebase.Extensions;
+using Firebase.Firestore;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -28,14 +30,9 @@ public class Panel_ebook_info : MonoBehaviour
     {
         this.item_ebook_temp = item_ebook;
         this.gameObject.SetActive(true);
-        WWWForm frm_info_ebook = this.carrot.frm_act("get_info_ebook");
-        frm_info_ebook.AddField("id_ebook", item_ebook.s_id);
-        frm_info_ebook.AddField("lang", item_ebook.s_lang);
-        this.carrot.send(frm_info_ebook,this.act_get_info_ebook);
         if (item_ebook.is_bookmark)
         {
             Debug.Log("Book Mark id:" + item_ebook.s_id);
-            this.carrot.hide_box();
             this.img_avatar.sprite = this.avatar_book_default;
             this.txt_ebook_name.text = "...";
             this.txt_ebook_desc.text = "...";
@@ -49,6 +46,23 @@ public class Panel_ebook_info : MonoBehaviour
             this.id_ebook = item_ebook.s_id;
             this.btn_ebook_bookmark.SetActive(true);
         }
+
+        carrot.db.Collection("ebook").Document(id_ebook).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            DocumentSnapshot docData = task.Result;
+            if (task.IsCompleted)
+            {
+                if (docData.Exists)
+                {
+                    IDictionary data_ebook = docData.ToDictionary();
+                    this.act_get_info_ebook(Carrot.Json.Serialize(data_ebook));
+                }
+                else
+                {
+                    this.carrot.show_msg("Ebook", "EBook does not exist", Carrot.Msg_Icon.Alert);
+                }
+            }
+        });
     }
 
     private void act_get_info_ebook(string s_data)
