@@ -82,7 +82,7 @@ public class Panel_ebook_read : MonoBehaviour
 
     public void close_read()
     {
-        GameObject.Find("App").GetComponent<App>().play_sound_click();
+        GameObject.Find("App").GetComponent<App>().carrot.play_sound_click();
         this.gameObject.SetActive(false);
     }
 
@@ -202,7 +202,7 @@ public class Panel_ebook_read : MonoBehaviour
         PlayerPrefs.SetInt("f_font_size", this.f_font_size);
         PlayerPrefs.SetInt("f_font_family", this.f_font_family);
         this.panel_font_style.SetActive(false);
-        GameObject.Find("App").GetComponent<App>().play_sound_click();
+        GameObject.Find("App").GetComponent<App>().carrot.play_sound_click();
     }
 
     public void change_slide_f_size()

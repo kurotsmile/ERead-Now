@@ -96,24 +96,24 @@ public class Panel_ebook_info : MonoBehaviour
     public void close_info()
     {
         this.gameObject.SetActive(false);
-        GameObject.Find("App").GetComponent<App>().play_sound_click();
+        this.carrot.play_sound_click();
     }
 
     public void read_ebook()
     {
-        GameObject.Find("App").GetComponent<App>().play_sound_click();
+        this.carrot.play_sound_click();
         GameObject.Find("App").GetComponent<App>().panel_ebook_read.read_book(this.id_ebook);
     }
 
     public void read_ebook_online()
     {
-        GameObject.Find("App").GetComponent<App>().play_sound_click();
+        this.carrot.play_sound_click();
         Application.OpenURL(this.carrot.mainhost+"?p=ebook&id"+this.id_ebook);
     }
 
     public void add_ebookmark()
     {
-        GameObject.Find("App").GetComponent<App>().play_sound_click();
+        this.carrot.play_sound_click();
         GameObject.Find("App").GetComponent<Ebookmark>().add(this.id_ebook, this.txt_ebook_name.text,this.item_ebook_temp.s_lang);
         this.btn_ebook_bookmark.SetActive(false);
     }

@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -50,7 +49,7 @@ public class Color_Theme : MonoBehaviour
             this.is_sun = true;
         }
         this.check_mode_theme();
-        this.GetComponent<App>().play_sound_click();
+        this.GetComponent<App>().carrot.play_sound_click();
     }
 
     public bool get_is_sun()
