@@ -138,4 +138,27 @@ public class App : MonoBehaviour
         this.carrot.play_sound_click();
         Application.OpenURL(PlayerPrefs.GetString("fb_url", "https://www.facebook.com/Carrot-Store-Book-111666094660038"));
     }
+
+    public void show_list_category_ebook()
+    {
+        this.carrot.show_loading();
+        this.carrot.db.Collection("ebook_category").GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            QuerySnapshot qDocs= task.Result;
+            if (task.IsCompleted)
+            {
+                this.carrot.hide_loading();
+                Carrot.Carrot_Box list_box_cat_ebook=this.carrot.Create_Box("category_ebook_list");
+                foreach(DocumentSnapshot doc in qDocs.Documents)
+                {
+                    IDictionary data_ebook = doc.ToDictionary();
+                    string name_cat = "";
+                    if (data_ebook["name"] != null) name_cat = data_ebook["name"].ToString();
+                    Carrot.Carrot_Box_Item item_cat = list_box_cat_ebook.create_item("cat_item");
+                    item_cat.set_title(name_cat);
+                    item_cat.set_tip(name_cat);
+                }
+            }
+        });
+    }
 }
