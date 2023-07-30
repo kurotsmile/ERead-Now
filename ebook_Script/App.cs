@@ -2,7 +2,6 @@ using Firebase.Extensions;
 using Firebase.Firestore;
 using System.Collections;
 using UnityEngine;
-using UnityEngine.Purchasing;
 using UnityEngine.UI;
 
 public class App : MonoBehaviour
@@ -16,6 +15,9 @@ public class App : MonoBehaviour
     public Panel_ebook_info panel_ebook_info;
     public Panel_ebook_read panel_ebook_read;
     public ScrollRect rect_scroll_main;
+
+    private string key_category_ebook_show="";
+    private Carrot.Carrot_Box list_box_category_ebook = null;
 
     void Start()
     {
@@ -53,10 +55,17 @@ public class App : MonoBehaviour
 
     public void show_list_ebook()
     {
+        this.key_category_ebook_show = "";
+        this.get_data_list_ebook();
+    }
+
+    private void get_data_list_ebook()
+    {
         this.carrot.show_loading();
-        Query ebookQuery=this.carrot.db.Collection("ebook");
+        Query ebookQuery = this.carrot.db.Collection("ebook");
         ebookQuery = ebookQuery.WhereEqualTo("lang", this.carrot.lang.get_key_lang());
         ebookQuery = ebookQuery.WhereEqualTo("status", "publish");
+        if(this.key_category_ebook_show!="") ebookQuery = ebookQuery.WhereEqualTo("category", this.key_category_ebook_show);
         ebookQuery.Limit(20);
         ebookQuery.GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
@@ -64,9 +73,9 @@ public class App : MonoBehaviour
             {
                 this.carrot.hide_loading();
                 this.carrot.clear_contain(this.tr_area_all_item);
-                QuerySnapshot ebookSnapshots=task.Result;
+                QuerySnapshot ebookSnapshots = task.Result;
 
-                foreach(DocumentSnapshot ebookDoc in ebookSnapshots)
+                foreach (DocumentSnapshot ebookDoc in ebookSnapshots)
                 {
                     IDictionary data_ebook = ebookDoc.ToDictionary();
                     data_ebook["id"] = ebookDoc.Id;
@@ -79,7 +88,7 @@ public class App : MonoBehaviour
                     if (data_ebook["title"] != null) obj_ebook.GetComponent<Item_Ebook>().txt_name.text = data_ebook["title"].ToString();
                     if (data_ebook["author"] != null) obj_ebook.GetComponent<Item_Ebook>().txt_tip.text = data_ebook["author"].ToString();
                     obj_ebook.GetComponent<Item_Ebook>().change_theme(GetComponent<Color_Theme>().get_is_sun(), GetComponent<Color_Theme>().color_txt_title_sun);
-                    if(data_ebook["icon"]!=null) this.carrot.get_img(data_ebook["icon"].ToString(), obj_ebook.GetComponent<Item_Ebook>().img_avatar);
+                    if (data_ebook["icon"] != null) this.carrot.get_img(data_ebook["icon"].ToString(), obj_ebook.GetComponent<Item_Ebook>().img_avatar);
                 }
 
                 GameObject obj_ebook_more = Instantiate(this.prefab_item_ebook_more);
@@ -148,17 +157,27 @@ public class App : MonoBehaviour
             if (task.IsCompleted)
             {
                 this.carrot.hide_loading();
-                Carrot.Carrot_Box list_box_cat_ebook=this.carrot.Create_Box("category_ebook_list");
+                if (this.list_box_category_ebook != null) this.list_box_category_ebook.close();
+                this.list_box_category_ebook = this.carrot.Create_Box("category_ebook_list");
                 foreach(DocumentSnapshot doc in qDocs.Documents)
                 {
                     IDictionary data_ebook = doc.ToDictionary();
                     string name_cat = "";
                     if (data_ebook["name"] != null) name_cat = data_ebook["name"].ToString();
-                    Carrot.Carrot_Box_Item item_cat = list_box_cat_ebook.create_item("cat_item");
+                    Carrot.Carrot_Box_Item item_cat = this.list_box_category_ebook.create_item("cat_item");
                     item_cat.set_title(name_cat);
                     item_cat.set_tip(name_cat);
+                    item_cat.set_icon(this.carrot.icon_carrot_all_category);
+                    item_cat.set_act(() => this.show_list_ebook_by_category(name_cat));
                 }
             }
         });
+    }
+
+    private void show_list_ebook_by_category(string s_key)
+    {
+        this.key_category_ebook_show = s_key;
+        if (this.list_box_category_ebook != null) this.list_box_category_ebook.close();
+        this.get_data_list_ebook();
     }
 }
