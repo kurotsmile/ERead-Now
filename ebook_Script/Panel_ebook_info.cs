@@ -94,7 +94,7 @@ public class Panel_ebook_info : MonoBehaviour
     public void read_ebook_online()
     {
         GameObject.Find("App").GetComponent<App>().play_sound_click();
-        Application.OpenURL(this.carrot.get_url_host()+"/ebook/"+this.id_ebook+"/" + PlayerPrefs.GetString("lang"));
+        Application.OpenURL(this.carrot.mainhost+"?p=ebook&id"+this.id_ebook);
     }
 
     public void add_ebookmark()
@@ -106,6 +106,6 @@ public class Panel_ebook_info : MonoBehaviour
 
     public void ebook_share()
     {
-        this.carrot.show_share(this.carrot.get_url_host()+"/product/"+this.item_ebook_temp.s_id+"/"+this.item_ebook_temp.s_lang,PlayerPrefs.GetString("ebook_share", "Share this book so everyone can read it"));
+        this.carrot.show_share(this.carrot.mainhost + "?p=ebook&id" + this.id_ebook, PlayerPrefs.GetString("ebook_share", "Share this book so everyone can read it"));
     }
 }

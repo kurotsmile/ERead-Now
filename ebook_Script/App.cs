@@ -1,3 +1,5 @@
+using Firebase.Extensions;
+using Firebase.Firestore;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -18,7 +20,6 @@ public class App : MonoBehaviour
     public GameObject panel_ebook_setting;
     public Panel_ebook_read panel_ebook_read;
     public ScrollRect rect_scroll_main;
-    public bool is_only_Vietnam_country;
 
     [Header("Setting")]
     public Sprite icon_sound_on;
@@ -76,9 +77,33 @@ public class App : MonoBehaviour
 
     public void show_list_ebook()
     {
-        WWWForm frm = this.carrot.frm_act("show_list_ebook");
-        if(this.is_only_Vietnam_country) frm.AddField("lang", "vi");
-        this.carrot.send(frm,this.act_show_list_ebook);
+        Query ebookQuery=this.carrot.db.Collection("ebook");
+        ebookQuery = ebookQuery.WhereEqualTo("lang", this.carrot.lang.get_key_lang());
+        ebookQuery = ebookQuery.WhereEqualTo("status", "publish");
+        ebookQuery.Limit(20);
+        ebookQuery.GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCompleted)
+            {
+                this.carrot.clear_contain(this.tr_area_all_item);
+                QuerySnapshot ebookSnapshots=task.Result;
+
+                foreach(DocumentSnapshot ebookDoc in ebookSnapshots)
+                {
+                    IDictionary data_ebook = ebookDoc.ToDictionary();
+                    GameObject obj_ebook = Instantiate(this.prefab_item_ebook);
+                    obj_ebook.transform.SetParent(this.tr_area_all_item);
+                    obj_ebook.transform.localPosition = new Vector3(obj_ebook.transform.localPosition.x, obj_ebook.transform.localPosition.y, 0f);
+                    obj_ebook.transform.localScale = new Vector3(1f, 1f, 1f);
+                    obj_ebook.GetComponent<Item_Ebook>().s_id = data_ebook["id"].ToString();
+                    obj_ebook.GetComponent<Item_Ebook>().s_lang = data_ebook["lang"].ToString();
+                    obj_ebook.GetComponent<Item_Ebook>().txt_name.text = data_ebook["name"].ToString();
+                    obj_ebook.GetComponent<Item_Ebook>().txt_tip.text = data_ebook["tip"].ToString();
+                    obj_ebook.GetComponent<Item_Ebook>().change_theme(GetComponent<Color_Theme>().get_is_sun(), GetComponent<Color_Theme>().color_txt_title_sun);
+                    this.carrot.get_img(data_ebook["icon"].ToString(), obj_ebook.GetComponent<Item_Ebook>().img_avatar);
+                }
+            }
+        });
     }
 
     private void act_show_list_ebook(string s_data)
@@ -95,17 +120,7 @@ public class App : MonoBehaviour
 
         for(int i = 0; i < list_ebook.Count; i++)
         {
-            IDictionary data_ebook = (IDictionary)list_ebook[i];
-            GameObject obj_ebook = Instantiate(this.prefab_item_ebook);
-            obj_ebook.transform.SetParent(this.tr_area_all_item);
-            obj_ebook.transform.localPosition=new Vector3(obj_ebook.transform.localPosition.x, obj_ebook.transform.localPosition.y, 0f);
-            obj_ebook.transform.localScale = new Vector3(1f, 1f, 1f);
-            obj_ebook.GetComponent<Item_Ebook>().s_id = data_ebook["id"].ToString();
-            obj_ebook.GetComponent<Item_Ebook>().s_lang = data_ebook["lang"].ToString();
-            obj_ebook.GetComponent<Item_Ebook>().txt_name.text = data_ebook["name"].ToString();
-            obj_ebook.GetComponent<Item_Ebook>().txt_tip.text = data_ebook["tip"].ToString();
-            obj_ebook.GetComponent<Item_Ebook>().change_theme(GetComponent<Color_Theme>().get_is_sun(), GetComponent<Color_Theme>().color_txt_title_sun);
-            this.carrot.get_img(data_ebook["icon"].ToString(), obj_ebook.GetComponent<Item_Ebook>().img_avatar);
+
         }
 
         GameObject obj_ebook_more = Instantiate(this.prefab_item_ebook_more);
@@ -153,9 +168,7 @@ public class App : MonoBehaviour
 
     public void show_search()
     {
-        WWWForm frm_search = this.carrot.frm_act("search_book");
-        if (this.is_only_Vietnam_country) frm_search.AddField("lang", "vi");
-        this.carrot.show_search(frm_search,act_done_search,PlayerPrefs.GetString("search_tip", "Enter the title of the book cover you want to read"));
+        this.carrot.show_search(act_done_search,PlayerPrefs.GetString("search_tip", "Enter the title of the book cover you want to read"));
         this.play_sound_click();
     }
 
