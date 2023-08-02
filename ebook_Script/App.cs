@@ -18,6 +18,7 @@ public class App : MonoBehaviour
 
     private string key_category_ebook_show="";
     private Carrot.Carrot_Box list_box_category_ebook = null;
+    private Carrot.Carrot_Box list_box_info_ebook = null;
 
     void Start()
     {
@@ -83,12 +84,14 @@ public class App : MonoBehaviour
                     obj_ebook.transform.SetParent(this.tr_area_all_item);
                     obj_ebook.transform.localPosition = new Vector3(obj_ebook.transform.localPosition.x, obj_ebook.transform.localPosition.y, 0f);
                     obj_ebook.transform.localScale = new Vector3(1f, 1f, 1f);
+                    obj_ebook.GetComponent<Item_Ebook>().data = data_ebook;
                     obj_ebook.GetComponent<Item_Ebook>().s_id = data_ebook["id"].ToString();
                     obj_ebook.GetComponent<Item_Ebook>().s_lang = data_ebook["lang"].ToString();
                     if (data_ebook["title"] != null) obj_ebook.GetComponent<Item_Ebook>().txt_name.text = data_ebook["title"].ToString();
                     if (data_ebook["author"] != null) obj_ebook.GetComponent<Item_Ebook>().txt_tip.text = data_ebook["author"].ToString();
                     obj_ebook.GetComponent<Item_Ebook>().change_theme(GetComponent<Color_Theme>().get_is_sun(), GetComponent<Color_Theme>().color_txt_title_sun);
                     if (data_ebook["icon"] != null) this.carrot.get_img(data_ebook["icon"].ToString(), obj_ebook.GetComponent<Item_Ebook>().img_avatar);
+                    obj_ebook.GetComponent<Item_Ebook>().set_act_click(() => this.show_info_ebook(obj_ebook.GetComponent<Item_Ebook>()));
                 }
 
                 GameObject obj_ebook_more = Instantiate(this.prefab_item_ebook_more);
@@ -100,6 +103,94 @@ public class App : MonoBehaviour
                 this.rect_scroll_main.normalizedPosition = new Vector2(this.rect_scroll_main.normalizedPosition.x, 1f);
             }
         });
+    }
+
+    private void show_info_ebook(Item_Ebook ebook)
+    {
+        IDictionary data = ebook.data;
+        this.carrot.play_sound_click();
+        this.carrot.ads.show_ads_Interstitial();
+        this.list_box_info_ebook = this.carrot.Create_Box("info_ebook");
+        this.list_box_info_ebook.set_title(data["title"].ToString());
+        this.list_box_info_ebook.set_icon_white(ebook.img_avatar.sprite);
+
+        Carrot.Carrot_Box_Item item_cover = this.list_box_info_ebook.create_item("item_icon");
+        item_cover.set_icon_white(ebook.img_avatar.sprite);
+        item_cover.set_title("Cover");
+        item_cover.set_tip(data["icon"].ToString());
+
+        if (data["describe"] != null)
+        {
+            Carrot.Carrot_Box_Item item_describe=this.list_box_info_ebook.create_item("item_describe");
+            item_describe.set_icon(this.carrot.user.icon_user_info);
+            item_describe.set_title("Describe");
+            item_describe.set_tip(data["describe"].ToString());
+        }
+
+        if (data["category"]!= null)
+        {
+            Carrot.Carrot_Box_Item item_cat = this.list_box_info_ebook.create_item("item_cat");
+            item_cat.set_icon(this.carrot.icon_carrot_all_category);
+            item_cat.set_title("Category");
+            item_cat.set_tip(data["category"].ToString());
+        }
+
+        if (data["author"] != null)
+        {
+            if (data["author"].ToString() != "")
+            {
+                Carrot.Carrot_Box_Item item_author = this.list_box_info_ebook.create_item("item_author");
+                item_author.set_icon(this.carrot.user.icon_user_info);
+                item_author.set_title("Author");
+                item_author.set_tip(data["author"].ToString());
+            }
+        }
+
+        if (data["date"] != null)
+        {
+            Carrot.Carrot_Box_Item item_date = this.list_box_info_ebook.create_item("item_date");
+            item_date.set_icon(this.carrot.icon_carrot_database);
+            item_date.set_title("Date");
+            item_date.set_tip(data["date"].ToString());
+        }
+
+        if (data["id"] != null)
+        {
+            Carrot.Carrot_Box_Item item_id = this.list_box_info_ebook.create_item("item_id");
+            item_id.set_icon(this.carrot.icon_carrot_link);
+            item_id.set_title("ID Ebook");
+            item_id.set_tip(data["id"].ToString());
+        }
+
+        if (data["status"] != null)
+        {
+            Carrot.Carrot_Box_Item item_status = this.list_box_info_ebook.create_item("item_status");
+            item_status.set_icon(this.carrot.icon_carrot_advanced);
+            item_status.set_title("Status");
+            item_status.set_tip(data["status"].ToString());
+        }
+
+        if (data["lang"] != null)
+        {
+            Carrot.Carrot_Box_Item item_lang = this.list_box_info_ebook.create_item("item_lang");
+            item_lang.set_icon(this.carrot.lang.icon);
+            item_lang.set_title("Lang");
+            item_lang.set_tip(data["lang"].ToString());
+        }
+
+        Carrot.Carrot_Box_Btn_Panel panel_btn = this.list_box_info_ebook.create_panel_btn();
+        Carrot.Carrot_Button_Item btn_read=panel_btn.create_btn("btn_read");
+        btn_read.set_icon(this.carrot.icon_carrot_visible_off);
+        btn_read.set_label("Read");
+        btn_read.set_bk_color(this.carrot.color_highlight);
+        btn_read.set_label_color(Color.white);
+
+        Carrot.Carrot_Button_Item btn_close = panel_btn.create_btn("btn_close");
+        btn_close.set_icon(this.carrot.icon_carrot_cancel);
+        btn_close.set_label("Close");
+        btn_close.set_act_click(() => this.list_box_info_ebook.close());
+        btn_close.set_bk_color(this.carrot.color_highlight);
+        btn_close.set_label_color(Color.white);
     }
 
     private void act_show_list_after_lang(string s_data)
@@ -127,8 +218,7 @@ public class App : MonoBehaviour
 
     public void show_eBook_info(Item_Ebook item_e)
     {
-        this.carrot.play_sound_click();
-        this.carrot.ads.show_ads_Interstitial();
+
         this.panel_ebook_info.show_info(item_e);
     }
 
