@@ -1,7 +1,6 @@
-using Firebase.Extensions;
-using Firebase.Firestore;
+using System;
 using System.Collections;
-using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,15 +12,12 @@ public class Panel_ebook_read : MonoBehaviour
 
     [Header("Obj ERead")]
     public Sprite icon_list_index;
-    public Transform area_all_txt_contain;
-    public GameObject txt_containt_prefab;
-    public GameObject Item_index_prefab;
+
     public Slider slider_nav_page;
     public GameObject btn_nav_next;
     public GameObject btn_nav_prev;
     public GameObject iu_header;
     public GameObject iu_footer;
-    public ScrollRect scrollrect_eread_contain;
 
     [Header("Font style")]
     public Color32 color_sel_font_family;
@@ -34,55 +30,39 @@ public class Panel_ebook_read : MonoBehaviour
     private int f_font_family_index_setting = 0;
     public Image[] btn_font_family;
 
-
-    private IList list_nav;
+    public TMPro.TMP_InputField inp_content;
+    public TMPro.TMP_Text txt_content;
     private string id_ebook;
     private int index_page = 0;
     private bool is_show_iu = true;
     private Carrot.Carrot_Box list_box_index = null;
+    private IList contents_ebook;
 
-    public void read_book(string id_ebook)
+    public void read_book(Item_Ebook ebook)
     {
-        this.id_ebook = id_ebook;
+        this.id_ebook = ebook.data["id"].ToString();
         this.gameObject.SetActive(true);
         this.panel_font_style.SetActive(false);
         this.btn_nav_prev.SetActive(false);
-        this.scrollrect_eread_contain.normalizedPosition = new Vector2(this.scrollrect_eread_contain.normalizedPosition.x,1f);
         this.f_font_size = PlayerPrefs.GetInt("f_font_size", 16);
         this.f_font_family = PlayerPrefs.GetInt("f_font_family", 0);
 
-        carrot.db.Collection("ebook").Document(id_ebook).GetSnapshotAsync().ContinueWithOnMainThread(task =>
-        {
-            DocumentSnapshot docData=task.Result;
-            if (task.IsCompleted)
-            {
-                if (docData.Exists)
-                {
-                    IDictionary data_ebook = docData.ToDictionary();
-                }
-                else
-                {
-                    this.carrot.show_msg("Ebook", "EBook does not exist", Carrot.Msg_Icon.Alert);
-                }
-            }
-        });
-    }
+        this.index_page = 0;
+        IDictionary data = ebook.data;
+        this.contents_ebook =(IList) data["contents"];
 
-    private void act_read_ebook(string s_data)
-    {
-        IDictionary data_ebook = (IDictionary)Carrot.Json.Deserialize(s_data);
-        this.show_contain(data_ebook["html"].ToString());
-        this.list_nav = (IList)data_ebook["nav"];
-        this.slider_nav_page.maxValue = this.list_nav.Count;
+        this.slider_nav_page.maxValue = this.contents_ebook.Count-1;
         this.slider_nav_page.value = 0;
         this.index_page = 0;
         this.is_show_iu = true;
         this.check_show_iu();
+
+        this.load_page_by_index(0);
     }
 
     public void close_read()
     {
-        GameObject.Find("App").GetComponent<App>().carrot.play_sound_click();
+        this.carrot.play_sound_click();
         this.gameObject.SetActive(false);
     }
 
@@ -90,21 +70,15 @@ public class Panel_ebook_read : MonoBehaviour
     {
         if (this.list_box_index != null) this.list_box_index.close();
         this.list_box_index=this.carrot.Create_Box("The book's table of contents", this.icon_list_index);
-        for(int i = 0; i < this.list_nav.Count; i++)
+        for(int i = 0; i <this.contents_ebook.Count; i++)
         {
-            IDictionary data_nav = (IDictionary)this.list_nav[i];
+            var index = i;
+            IDictionary chapter = (IDictionary)this.contents_ebook[i];
             Carrot.Carrot_Box_Item item_index = this.list_box_index.create_item("item_" + i);
-            IDictionary nav_name = (IDictionary)data_nav["name"];
-            IDictionary nav_src = (IDictionary)data_nav["src"];
-            item_index.set_title(data_nav["title"].ToString());
+            item_index.set_title(chapter["title"].ToString());
+            item_index.set_tip("Chapter " + (i + 1));
+            item_index.set_act(() => this.load_page_by_index(index));
         }
-    }
-
-
-    private void act_read_page(string s_data)
-    {
-        IDictionary data_ebook = (IDictionary)Carrot.Json.Deserialize(s_data);
-        this.show_contain(data_ebook["html"].ToString());
     }
 
     public void btn_next_page()
@@ -121,13 +95,20 @@ public class Panel_ebook_read : MonoBehaviour
 
     public void load_page_by_index(int index_p)
     {
+        if (this.list_box_index != null) this.list_box_index.close();
+
         if (index_p <= 0) this.btn_nav_prev.SetActive(false); else this.btn_nav_prev.SetActive(true);
-        if (index_p >= this.list_nav.Count) this.btn_nav_next.SetActive(false); else this.btn_nav_next.SetActive(true);
+        if (index_p >= this.contents_ebook.Count-1) this.btn_nav_next.SetActive(false); else this.btn_nav_next.SetActive(true);
 
         this.slider_nav_page.value=index_p;
         this.index_page = index_p;
-        IDictionary data_nav = (IDictionary)this.list_nav[index_p];
-        IDictionary nav_src = (IDictionary)data_nav["src"];
+
+        IDictionary chapter = (IDictionary)this.contents_ebook[index_p];
+        inp_content.text = this.StripHTML(chapter["content"].ToString());
+        if (this.theme.get_is_sun())
+            this.txt_content.color = Color.black;
+        else
+            this.txt_content.color = Color.white;
     }
 
     public void check_show_page_nav()
@@ -191,18 +172,11 @@ public class Panel_ebook_read : MonoBehaviour
     public void btn_done_f_size()
     {
         this.f_font_family = this.f_font_family_index_setting;
-        foreach(Transform c in this.area_all_txt_contain)
-        {
-            if (c.GetComponent<Text>() != null)
-            {
-                c.GetComponent<Text>().fontSize = this.f_font_size;
-                c.GetComponent<Text>().font = this.f_txt_font_family[this.f_font_family].font;
-            }
-        }
+        this.txt_content.fontSize = this.f_font_size;
         PlayerPrefs.SetInt("f_font_size", this.f_font_size);
         PlayerPrefs.SetInt("f_font_family", this.f_font_family);
         this.panel_font_style.SetActive(false);
-        GameObject.Find("App").GetComponent<App>().carrot.play_sound_click();
+        this.carrot.play_sound_click();
     }
 
     public void change_slide_f_size()
@@ -217,50 +191,6 @@ public class Panel_ebook_read : MonoBehaviour
         this.f_font_txt_show.text = this.f_font_size + "px";
     }
 
-
-    private void show_contain(string s)
-    {
-        this.carrot.clear_contain(this.area_all_txt_contain);
-        int limit_char =5000;
-        if (s.Length >limit_char)
-        {
-            int toal_char = s.Length;
-            int toal_p = Mathf.RoundToInt(toal_char / limit_char);
-
-            int start_point;
-            int end_point;
-            for(int i = 0; i <= toal_p; i++)
-            {
-                start_point = (i * limit_char);
-                if (i >= toal_p)
-                {
-                    end_point = toal_char-start_point;
-                }
-                else
-                    end_point =limit_char;
-
-                this.add_obj_txt(s.Substring(start_point, end_point));
-            }
-        }
-        else
-        {
-            this.add_obj_txt(s);
-        }
-    }
-
-    private void add_obj_txt(string s)
-    {
-        GameObject txt_obj = Instantiate(this.txt_containt_prefab);
-        txt_obj.transform.SetParent(this.area_all_txt_contain);
-        txt_obj.transform.localScale = new Vector3(1f, 1f, 1f);
-        txt_obj.GetComponent<Text>().text = s;
-        txt_obj.GetComponent<Text>().fontSize = this.f_font_size;
-        if (this.theme.get_is_sun())
-            txt_obj.GetComponent<Text>().color = Color.black;
-        else
-            txt_obj.GetComponent<Text>().color = Color.white;
-    }
-
     public void btn_sel_font_family(int index)
     {
         for(int i = 0; i < this.btn_font_family.Length; i++)
@@ -269,7 +199,6 @@ public class Panel_ebook_read : MonoBehaviour
                 this.btn_font_family[i].color = this.theme.color_btn_sun;
             else
                 this.btn_font_family[i].color = this.theme.color_btn_moon;
-
         }
 
         this.btn_font_family[index].color = this.color_sel_font_family;
@@ -277,4 +206,8 @@ public class Panel_ebook_read : MonoBehaviour
         this.f_font_txt_show.font = this.f_txt_font_family[index].font;
     }
 
+    public string StripHTML(string input)
+    {
+        return Regex.Replace(input, "<.*?>", String.Empty);
+    }
 }

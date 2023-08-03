@@ -102,7 +102,6 @@ public class Panel_ebook_info : MonoBehaviour
     public void read_ebook()
     {
         this.carrot.play_sound_click();
-        GameObject.Find("App").GetComponent<App>().panel_ebook_read.read_book(this.id_ebook);
     }
 
     public void read_ebook_online()

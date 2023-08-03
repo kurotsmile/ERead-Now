@@ -184,6 +184,7 @@ public class App : MonoBehaviour
         btn_read.set_label("Read");
         btn_read.set_bk_color(this.carrot.color_highlight);
         btn_read.set_label_color(Color.white);
+        btn_read.set_act_click(()=>this.read_ebook(ebook));
 
         Carrot.Carrot_Button_Item btn_close = panel_btn.create_btn("btn_close");
         btn_close.set_icon(this.carrot.icon_carrot_cancel);
@@ -191,6 +192,13 @@ public class App : MonoBehaviour
         btn_close.set_act_click(() => this.list_box_info_ebook.close());
         btn_close.set_bk_color(this.carrot.color_highlight);
         btn_close.set_label_color(Color.white);
+    }
+
+    private void read_ebook(Item_Ebook ebook)
+    {
+        this.carrot.play_sound_click();
+        if (this.list_box_info_ebook != null) this.list_box_info_ebook.close();
+        this.panel_ebook_read.read_book(ebook);
     }
 
     private void act_show_list_after_lang(string s_data)
