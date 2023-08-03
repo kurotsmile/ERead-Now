@@ -17,6 +17,7 @@ public class App : MonoBehaviour
     public Sprite icon_cover_ebook_default;
     public Transform tr_area_all_item;
     public GameObject prefab_item_ebook;
+    public GameObject prefab_item_main;
     public GameObject prefab_item_ebook_more;
     public ScrollRect rect_scroll_main;
 
@@ -108,12 +109,23 @@ public class App : MonoBehaviour
                     item_ebook.set_act_click(() => this.show_info_ebook(obj_ebook.GetComponent<Item_Ebook>()));
                 }
 
-                GameObject obj_ebook_more = Instantiate(this.prefab_item_ebook_more);
-                obj_ebook_more.transform.SetParent(this.tr_area_all_item);
-                obj_ebook_more.transform.localPosition = new Vector3(obj_ebook_more.transform.localPosition.x, obj_ebook_more.transform.localPosition.y, obj_ebook_more.transform.localPosition.z);
-                obj_ebook_more.transform.localScale = new Vector3(1f, 1f, 1f);
-                obj_ebook_more.GetComponent<Item_book_more>().txt_title.text = PlayerPrefs.GetString("ebook_more", "Get more books");
-                obj_ebook_more.GetComponent<Item_book_more>().txt_tip.text = PlayerPrefs.GetString("ebook_more_tip", "Click here to get more titles");
+                Item_book_more item_more_ebook=this.add_item_menu_content();
+                item_more_ebook.set_title(PlayerPrefs.GetString("ebook_more", "Get more books"));
+                item_more_ebook.set_tip(PlayerPrefs.GetString("ebook_more_tip", "Click here to get more titles"));
+                item_more_ebook.set_act_click(() => this.show_list_ebook());
+
+                Item_book_more item_cat_ebook = this.add_item_menu_content();
+                item_cat_ebook.set_icon(this.carrot.icon_carrot_all_category);
+                item_cat_ebook.set_title(PlayerPrefs.GetString("ebook_category", "All Category"));
+                item_cat_ebook.set_tip(PlayerPrefs.GetString("ebook_category_tip", "List of categories and bookshelf"));
+                item_cat_ebook.set_act_click(()=>this.show_list_category_ebook());
+
+                Item_book_more item_write_ebook = this.add_item_menu_content();
+                item_write_ebook.set_icon(this.carrot.icon_carrot_write);
+                item_write_ebook.set_title(PlayerPrefs.GetString("ebook_write", "Write Ebook"));
+                item_write_ebook.set_tip(PlayerPrefs.GetString("ebook_write_tip", "Write your own book and publish your own ebook"));
+                item_write_ebook.set_act_click(() => this.show_list_category_ebook());
+
                 this.rect_scroll_main.normalizedPosition = new Vector2(this.rect_scroll_main.normalizedPosition.x, 1f);
             }
         });
@@ -216,6 +228,47 @@ public class App : MonoBehaviour
             item_status.set_tip(data["status"].ToString());
         }
 
+        if (data["user"] != null)
+        {
+            if (data["user"].ToString() != "")
+            {
+                IDictionary user =(IDictionary)data["user"];
+                var user_id = user["id"].ToString();
+                var user_lang = user["lang"].ToString();
+                Carrot.Carrot_Box_Item item_user = this.list_box_info_ebook.create_item("item_author");
+                item_user.set_icon(this.carrot.user.icon_user_login_true);
+                item_user.set_title("Posted by");
+                if (user["name"].ToString() != "")
+                {
+                    item_user.set_tip(user["name"].ToString());
+                    Carrot.Carrot_Box_Btn_Item btn_user_info = item_user.create_item();
+                    btn_user_info.set_icon(this.carrot.user.icon_user_info);
+                    btn_user_info.set_color(this.carrot.color_highlight);
+                    Destroy(btn_user_info.GetComponent<Button>());
+                }
+                else
+                {
+                    item_user.set_tip("incognito");
+                }
+
+                if (user["avatar"]!=null)
+                {
+                    string id_avatar_user = "avatar_user_" + user["id"].ToString();
+                    
+                    Sprite sp_avatar = this.carrot.get_tool().get_sprite_to_playerPrefs(id_avatar_user);
+                    if (sp_avatar != null) {
+                        item_user.set_icon_white(sp_avatar);
+                    }
+                    else
+                    {
+                        string url_avatar = user["avatar"].ToString();
+                        if (url_avatar != "") this.carrot.get_img_and_save_playerPrefs(url_avatar, item_user.img_icon, id_avatar_user);
+                    }
+                }
+                item_user.set_act(()=>this.carrot.user.show_user_by_id(user_id, user_lang));
+            }
+        }
+
         if (data["lang"] != null)
         {
             Carrot.Carrot_Box_Item item_lang = this.list_box_info_ebook.create_item("item_lang");
@@ -239,12 +292,15 @@ public class App : MonoBehaviour
         btn_share.set_label_color(Color.white);
         btn_share.set_act_click(() => this.share_ebook(id_ebook));
 
-        Carrot.Carrot_Button_Item btn_mark = panel_btn.create_btn("btn_mark");
-        btn_mark.set_icon(this.mark.icon);
-        btn_mark.set_label("Mark");
-        btn_mark.set_bk_color(this.carrot.color_highlight);
-        btn_mark.set_label_color(Color.white);
-        btn_mark.set_act_click(() => this.mark.add(ebook));
+        if (data["mark"] == null)
+        {
+            Carrot.Carrot_Button_Item btn_mark = panel_btn.create_btn("btn_mark");
+            btn_mark.set_icon(this.mark.icon);
+            btn_mark.set_label("Mark");
+            btn_mark.set_bk_color(this.carrot.color_highlight);
+            btn_mark.set_label_color(Color.white);
+            btn_mark.set_act_click(() => this.mark.add(ebook));
+        }
 
         Carrot.Carrot_Button_Item btn_close = panel_btn.create_btn("btn_close");
         btn_close.set_icon(this.carrot.icon_carrot_cancel);
@@ -317,7 +373,8 @@ public class App : MonoBehaviour
                 this.carrot.hide_loading();
                 if (this.list_box_category_ebook != null) this.list_box_category_ebook.close();
                 this.list_box_category_ebook = this.carrot.Create_Box("category_ebook_list");
-                foreach(DocumentSnapshot doc in qDocs.Documents)
+                this.list_box_category_ebook.set_title("All Category");
+                foreach (DocumentSnapshot doc in qDocs.Documents)
                 {
                     IDictionary data_ebook = doc.ToDictionary();
                     string name_cat = "";
@@ -342,5 +399,14 @@ public class App : MonoBehaviour
     public string StripHTML(string input)
     {
         return Regex.Replace(input, "<.*?>", String.Empty);
+    }
+
+    private Item_book_more add_item_menu_content()
+    {
+        GameObject item_more = Instantiate(this.prefab_item_ebook_more);
+        item_more.transform.SetParent(this.tr_area_all_item);
+        item_more.transform.localScale = new Vector3(1f, 1f, 1f);
+        item_more.transform.localRotation = Quaternion.Euler(0, 0, 0);
+        return item_more.GetComponent<Item_book_more>();
     }
 }

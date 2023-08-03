@@ -57,6 +57,7 @@ public class Ebookmark : MonoBehaviour
                 item_mark.set_title(PlayerPrefs.GetString("ebookmark_" + i + "_name"));
                 item_mark.set_tip(i.ToString());
                 Item_Ebook item_Ebook=item_mark.gameObject.AddComponent<Item_Ebook>();
+                data_ebook["mark"] = "true";
                 item_Ebook.data = data_ebook;
                 item_Ebook.img_avatar = item_mark.img_icon;
                 item_Ebook.img_avatar.sprite = this.icon;
