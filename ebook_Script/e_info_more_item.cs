@@ -14,11 +14,6 @@ public class e_info_more_item : MonoBehaviour
         GameObject.Find("App").GetComponent<Ebookmark>().delete(index);
     }
 
-    public void view_book_mark()
-    {
-        GameObject.Find("App").GetComponent<Ebookmark>().view_ebook(index);
-    }
-
     public void change_theme(bool is_sun,Color32 color_sun_title)
     {
         if (is_sun)

@@ -8,13 +8,16 @@ using UnityEngine.UI;
 
 public class App : MonoBehaviour
 {
+    [Header("Obj Main")]
     public Carrot.Carrot carrot;
+    public Panel_ebook_read panel_ebook_read;
+    public Ebookmark mark;
 
     [Header("Obj App")]
+    public Sprite icon_cover_ebook_default;
     public Transform tr_area_all_item;
     public GameObject prefab_item_ebook;
     public GameObject prefab_item_ebook_more;
-    public Panel_ebook_read panel_ebook_read;
     public ScrollRect rect_scroll_main;
 
     private string key_category_ebook_show="";
@@ -79,14 +82,30 @@ public class App : MonoBehaviour
                     obj_ebook.transform.SetParent(this.tr_area_all_item);
                     obj_ebook.transform.localPosition = new Vector3(obj_ebook.transform.localPosition.x, obj_ebook.transform.localPosition.y, 0f);
                     obj_ebook.transform.localScale = new Vector3(1f, 1f, 1f);
-                    obj_ebook.GetComponent<Item_Ebook>().data = data_ebook;
-                    obj_ebook.GetComponent<Item_Ebook>().s_id = data_ebook["id"].ToString();
-                    obj_ebook.GetComponent<Item_Ebook>().s_lang = data_ebook["lang"].ToString();
-                    if (data_ebook["title"] != null) obj_ebook.GetComponent<Item_Ebook>().txt_name.text = data_ebook["title"].ToString();
-                    if (data_ebook["author"] != null) obj_ebook.GetComponent<Item_Ebook>().txt_tip.text = data_ebook["author"].ToString();
-                    obj_ebook.GetComponent<Item_Ebook>().change_theme(GetComponent<Color_Theme>().get_is_sun(), GetComponent<Color_Theme>().color_txt_title_sun);
-                    if (data_ebook["icon"] != null) this.carrot.get_img(data_ebook["icon"].ToString(), obj_ebook.GetComponent<Item_Ebook>().img_avatar);
-                    obj_ebook.GetComponent<Item_Ebook>().set_act_click(() => this.show_info_ebook(obj_ebook.GetComponent<Item_Ebook>()));
+                    Item_Ebook item_ebook = obj_ebook.GetComponent<Item_Ebook>();
+                    item_ebook.data = data_ebook;
+                    item_ebook.s_id = data_ebook["id"].ToString();
+                    item_ebook.s_lang = data_ebook["lang"].ToString();
+                    if (data_ebook["title"] != null) item_ebook.txt_name.text = data_ebook["title"].ToString();
+                    if (data_ebook["author"] != null) item_ebook.txt_tip.text = data_ebook["author"].ToString();
+                    item_ebook.change_theme(GetComponent<Color_Theme>().get_is_sun(), GetComponent<Color_Theme>().color_txt_title_sun);
+
+                    string id_cover_ebook = "cover_"+data_ebook["id"].ToString();
+                    Sprite sp_cover_ebook = this.carrot.get_tool().get_sprite_to_playerPrefs(id_cover_ebook);
+                    if (sp_cover_ebook != null)
+                    {
+                        item_ebook.img_avatar.sprite = sp_cover_ebook;
+                        item_ebook.img_avatar.color = Color.white;
+                    }
+                    else
+                    {
+                        if (data_ebook["icon"] != null)
+                        {
+                            if(data_ebook["icon"].ToString()!="") this.carrot.get_img_and_save_playerPrefs(data_ebook["icon"].ToString(), item_ebook.img_avatar, id_cover_ebook);
+                        }
+                    }
+
+                    item_ebook.set_act_click(() => this.show_info_ebook(obj_ebook.GetComponent<Item_Ebook>()));
                 }
 
                 GameObject obj_ebook_more = Instantiate(this.prefab_item_ebook_more);
@@ -100,7 +119,7 @@ public class App : MonoBehaviour
         });
     }
 
-    private void show_info_ebook(Item_Ebook ebook)
+    public void show_info_ebook(Item_Ebook ebook)
     {
         IDictionary data = ebook.data;
         var id_ebook = data["id"].ToString();
@@ -108,12 +127,27 @@ public class App : MonoBehaviour
         this.carrot.ads.show_ads_Interstitial();
         this.list_box_info_ebook = this.carrot.Create_Box("info_ebook");
         this.list_box_info_ebook.set_title(data["title"].ToString());
-        this.list_box_info_ebook.set_icon_white(ebook.img_avatar.sprite);
+        this.list_box_info_ebook.set_icon_white(icon_cover_ebook_default);
 
-        Carrot.Carrot_Box_Item item_cover = this.list_box_info_ebook.create_item("item_icon");
-        item_cover.set_icon_white(ebook.img_avatar.sprite);
-        item_cover.set_title("Cover");
-        item_cover.set_tip(data["icon"].ToString());
+        string id_cover_ebook = "cover_" + data["id"].ToString();
+        Sprite sp_cover_ebook = this.carrot.get_tool().get_sprite_to_playerPrefs(id_cover_ebook);
+        if (sp_cover_ebook != null)
+        {
+            Carrot.Carrot_Box_Item item_cover = this.list_box_info_ebook.create_item("item_icon");
+            item_cover.set_icon_white(sp_cover_ebook);
+            item_cover.set_title("Cover");
+            item_cover.set_tip(data["icon"].ToString());
+            this.list_box_info_ebook.set_icon_white(sp_cover_ebook);
+        }
+        else
+        {
+            Carrot.Carrot_Box_Item item_cover = this.list_box_info_ebook.create_item("item_icon");
+            item_cover.set_icon_white(this.icon_cover_ebook_default);
+            item_cover.set_title("Cover");
+            if (data["icon"].ToString() != "") item_cover.set_tip(data["icon"].ToString());
+            else item_cover.set_tip("No Cover");
+        }
+
 
         if (data["describe"] != null)
         {
@@ -161,10 +195,17 @@ public class App : MonoBehaviour
         if (data["contents"] != null)
         {
             IList list_contents = (IList)data["contents"];
+            var contents = list_contents;
             Carrot.Carrot_Box_Item item_chapter = this.list_box_info_ebook.create_item("item_chapter");
             item_chapter.set_icon(this.carrot.icon_carrot_write);
             item_chapter.set_title("Table of contents");
             item_chapter.set_tip(list_contents.Count.ToString()+" Chapter");
+            item_chapter.set_act(() => this.panel_ebook_read.show_list_index_in_contents(contents));
+
+            Carrot.Carrot_Box_Btn_Item btn_index_menu = item_chapter.create_item();
+            btn_index_menu.set_icon(this.carrot.user.icon_user_info);
+            btn_index_menu.set_color(this.carrot.color_highlight);
+            Destroy(btn_index_menu.GetComponent<Button>());
         }
 
         if (data["status"] != null)
@@ -197,6 +238,13 @@ public class App : MonoBehaviour
         btn_share.set_bk_color(this.carrot.color_highlight);
         btn_share.set_label_color(Color.white);
         btn_share.set_act_click(() => this.share_ebook(id_ebook));
+
+        Carrot.Carrot_Button_Item btn_mark = panel_btn.create_btn("btn_mark");
+        btn_mark.set_icon(this.mark.icon);
+        btn_mark.set_label("Mark");
+        btn_mark.set_bk_color(this.carrot.color_highlight);
+        btn_mark.set_label_color(Color.white);
+        btn_mark.set_act_click(() => this.mark.add(ebook));
 
         Carrot.Carrot_Button_Item btn_close = panel_btn.create_btn("btn_close");
         btn_close.set_icon(this.carrot.icon_carrot_cancel);

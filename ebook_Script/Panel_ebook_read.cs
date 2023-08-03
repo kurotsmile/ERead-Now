@@ -6,7 +6,6 @@ public class Panel_ebook_read : MonoBehaviour
 {
     [Header("Obj App")]
     public App app;
-    public Carrot.Carrot carrot;
     public Color_Theme theme;
 
     [Header("Obj ERead")]
@@ -60,29 +59,34 @@ public class Panel_ebook_read : MonoBehaviour
 
     public void close_read()
     {
-        this.carrot.play_sound_click();
+        this.app.carrot.play_sound_click();
         this.gameObject.SetActive(false);
     }
 
     public void show_list_index()
     {
+        this.show_list_index_in_contents(this.contents_ebook, this.index_page);
+    }
+
+    public void show_list_index_in_contents(IList contents,int index_view=-1)
+    {
         if (this.list_box_index != null) this.list_box_index.close();
-        this.list_box_index=this.carrot.Create_Box("The book's table of contents", this.icon_list_index);
-        for(int i = 0; i <this.contents_ebook.Count; i++)
+        this.list_box_index = this.app.carrot.Create_Box("The book's table of contents", this.icon_list_index);
+        for (int i = 0; i < contents.Count; i++)
         {
             var index = i;
-            IDictionary chapter = (IDictionary)this.contents_ebook[i];
+            IDictionary chapter = (IDictionary)contents[i];
             Carrot.Carrot_Box_Item item_index = this.list_box_index.create_item("item_" + i);
             item_index.set_title(chapter["title"].ToString());
             item_index.set_tip("Chapter " + (i + 1));
-            item_index.set_act(() => this.load_page_by_index(index));
-            if (this.index_page == i)
+            if(index_view!=-1) item_index.set_act(() => this.load_page_by_index(index));
+            if (index_view == i)
             {
-                Carrot.Carrot_Box_Btn_Item btn_cur=item_index.create_item();
-                btn_cur.set_color(this.carrot.color_highlight);
-                btn_cur.set_icon(this.carrot.icon_carrot_location);
+                Carrot.Carrot_Box_Btn_Item btn_cur = item_index.create_item();
+                btn_cur.set_color(this.app.carrot.color_highlight);
+                btn_cur.set_icon(this.app.carrot.icon_carrot_location);
                 Destroy(btn_cur.GetComponent<Button>());
-                item_index.set_icon(this.carrot.icon_carrot_visible_off);
+                item_index.set_icon(this.app.carrot.icon_carrot_visible_off);
             }
             else
             {
@@ -186,13 +190,13 @@ public class Panel_ebook_read : MonoBehaviour
         PlayerPrefs.SetInt("f_font_size", this.f_font_size);
         PlayerPrefs.SetInt("f_font_family", this.f_font_family);
         this.panel_font_style.SetActive(false);
-        this.carrot.play_sound_click();
+        this.app.carrot.play_sound_click();
     }
 
     public void change_slide_f_size()
     {
         this.f_font_size =int.Parse(this.f_slider_font_size.value.ToString());
-        this.carrot.delay_function(1f, this.check_f_size_show);
+        this.app.carrot.delay_function(1f, this.check_f_size_show);
     }
 
     private void check_f_size_show()
