@@ -1,6 +1,8 @@
 using Firebase.Extensions;
 using Firebase.Firestore;
+using System;
 using System.Collections;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,7 +14,6 @@ public class App : MonoBehaviour
     public Transform tr_area_all_item;
     public GameObject prefab_item_ebook;
     public GameObject prefab_item_ebook_more;
-    public Panel_ebook_info panel_ebook_info;
     public Panel_ebook_read panel_ebook_read;
     public ScrollRect rect_scroll_main;
 
@@ -24,7 +25,6 @@ public class App : MonoBehaviour
     {
         this.GetComponent<Color_Theme>().load_theme();
         this.panel_ebook_read.gameObject.SetActive(false);
-        this.panel_ebook_info.gameObject.SetActive(false);
 
         this.carrot.Load_Carrot(this.check_exit_app);
 
@@ -45,11 +45,6 @@ public class App : MonoBehaviour
         else if (this.panel_ebook_read.gameObject.activeInHierarchy)
         {
             this.panel_ebook_read.close_read();
-            this.carrot.set_no_check_exit_app();
-        }
-        else if (this.panel_ebook_info.area_all_item_info_more.gameObject.activeInHierarchy)
-        {
-            this.panel_ebook_info.close_info();
             this.carrot.set_no_check_exit_app();
         }
     }
@@ -108,6 +103,7 @@ public class App : MonoBehaviour
     private void show_info_ebook(Item_Ebook ebook)
     {
         IDictionary data = ebook.data;
+        var id_ebook = data["id"].ToString();
         this.carrot.play_sound_click();
         this.carrot.ads.show_ads_Interstitial();
         this.list_box_info_ebook = this.carrot.Create_Box("info_ebook");
@@ -124,7 +120,7 @@ public class App : MonoBehaviour
             Carrot.Carrot_Box_Item item_describe=this.list_box_info_ebook.create_item("item_describe");
             item_describe.set_icon(this.carrot.user.icon_user_info);
             item_describe.set_title("Describe");
-            item_describe.set_tip(data["describe"].ToString());
+            item_describe.set_tip(this.StripHTML(data["describe"].ToString()));
         }
 
         if (data["category"]!= null)
@@ -140,7 +136,7 @@ public class App : MonoBehaviour
             if (data["author"].ToString() != "")
             {
                 Carrot.Carrot_Box_Item item_author = this.list_box_info_ebook.create_item("item_author");
-                item_author.set_icon(this.carrot.user.icon_user_info);
+                item_author.set_icon(this.carrot.user.icon_user_login_true);
                 item_author.set_title("Author");
                 item_author.set_tip(data["author"].ToString());
             }
@@ -160,6 +156,15 @@ public class App : MonoBehaviour
             item_id.set_icon(this.carrot.icon_carrot_link);
             item_id.set_title("ID Ebook");
             item_id.set_tip(data["id"].ToString());
+        }
+
+        if (data["contents"] != null)
+        {
+            IList list_contents = (IList)data["contents"];
+            Carrot.Carrot_Box_Item item_chapter = this.list_box_info_ebook.create_item("item_chapter");
+            item_chapter.set_icon(this.carrot.icon_carrot_write);
+            item_chapter.set_title("Table of contents");
+            item_chapter.set_tip(list_contents.Count.ToString()+" Chapter");
         }
 
         if (data["status"] != null)
@@ -186,12 +191,25 @@ public class App : MonoBehaviour
         btn_read.set_label_color(Color.white);
         btn_read.set_act_click(()=>this.read_ebook(ebook));
 
+        Carrot.Carrot_Button_Item btn_share = panel_btn.create_btn("btn_share");
+        btn_share.set_icon(this.carrot.sp_icon_share);
+        btn_share.set_label("Share");
+        btn_share.set_bk_color(this.carrot.color_highlight);
+        btn_share.set_label_color(Color.white);
+        btn_share.set_act_click(() => this.share_ebook(id_ebook));
+
         Carrot.Carrot_Button_Item btn_close = panel_btn.create_btn("btn_close");
         btn_close.set_icon(this.carrot.icon_carrot_cancel);
         btn_close.set_label("Close");
         btn_close.set_act_click(() => this.list_box_info_ebook.close());
         btn_close.set_bk_color(this.carrot.color_highlight);
         btn_close.set_label_color(Color.white);
+    }
+
+    private void share_ebook(string id_ebook)
+    {
+        string link_share =this.carrot.mainhost+"?p=ebook&id="+id_ebook;
+        this.carrot.show_share(link_share, "Share this ebook with your friends and everyone to read together");
     }
 
     private void read_ebook(Item_Ebook ebook)
@@ -222,12 +240,6 @@ public class App : MonoBehaviour
             this.carrot.show_msg("Ebook", "No related items found");
         else
             this.show_list_ebook();
-    }
-
-    public void show_eBook_info(Item_Ebook item_e)
-    {
-
-        this.panel_ebook_info.show_info(item_e);
     }
 
     public void btn_setting()
@@ -277,5 +289,10 @@ public class App : MonoBehaviour
         this.key_category_ebook_show = s_key;
         if (this.list_box_category_ebook != null) this.list_box_category_ebook.close();
         this.get_data_list_ebook();
+    }
+
+    public string StripHTML(string input)
+    {
+        return Regex.Replace(input, "<.*?>", String.Empty);
     }
 }

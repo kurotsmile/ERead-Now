@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Ebookmark : MonoBehaviour
@@ -63,6 +61,6 @@ public class Ebookmark : MonoBehaviour
         i.is_bookmark = true;
         i.s_id= PlayerPrefs.GetString("ebookmark_" + index + "_id");
         i.s_lang = PlayerPrefs.GetString("ebookmark_" + index + "_lang");
-        GetComponent<App>().show_eBook_info(i);
+        //GetComponent<App>().show_eBook_info(i);
     }
 }

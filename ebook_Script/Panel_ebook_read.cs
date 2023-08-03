@@ -1,17 +1,17 @@
-using System;
 using System.Collections;
-using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class Panel_ebook_read : MonoBehaviour
 {
     [Header("Obj App")]
+    public App app;
     public Carrot.Carrot carrot;
     public Color_Theme theme;
 
     [Header("Obj ERead")]
     public Sprite icon_list_index;
+    public Sprite icon_chapter;
 
     public Slider slider_nav_page;
     public GameObject btn_nav_next;
@@ -32,7 +32,6 @@ public class Panel_ebook_read : MonoBehaviour
 
     public TMPro.TMP_InputField inp_content;
     public TMPro.TMP_Text txt_content;
-    private string id_ebook;
     private int index_page = 0;
     private bool is_show_iu = true;
     private Carrot.Carrot_Box list_box_index = null;
@@ -40,7 +39,6 @@ public class Panel_ebook_read : MonoBehaviour
 
     public void read_book(Item_Ebook ebook)
     {
-        this.id_ebook = ebook.data["id"].ToString();
         this.gameObject.SetActive(true);
         this.panel_font_style.SetActive(false);
         this.btn_nav_prev.SetActive(false);
@@ -78,6 +76,18 @@ public class Panel_ebook_read : MonoBehaviour
             item_index.set_title(chapter["title"].ToString());
             item_index.set_tip("Chapter " + (i + 1));
             item_index.set_act(() => this.load_page_by_index(index));
+            if (this.index_page == i)
+            {
+                Carrot.Carrot_Box_Btn_Item btn_cur=item_index.create_item();
+                btn_cur.set_color(this.carrot.color_highlight);
+                btn_cur.set_icon(this.carrot.icon_carrot_location);
+                Destroy(btn_cur.GetComponent<Button>());
+                item_index.set_icon(this.carrot.icon_carrot_visible_off);
+            }
+            else
+            {
+                item_index.set_icon(icon_chapter);
+            }
         }
     }
 
@@ -104,7 +114,7 @@ public class Panel_ebook_read : MonoBehaviour
         this.index_page = index_p;
 
         IDictionary chapter = (IDictionary)this.contents_ebook[index_p];
-        inp_content.text = this.StripHTML(chapter["content"].ToString());
+        inp_content.text = this.app.StripHTML(chapter["content"].ToString());
         if (this.theme.get_is_sun())
             this.txt_content.color = Color.black;
         else
@@ -204,10 +214,5 @@ public class Panel_ebook_read : MonoBehaviour
         this.btn_font_family[index].color = this.color_sel_font_family;
         this.f_font_family_index_setting = index;
         this.f_font_txt_show.font = this.f_txt_font_family[index].font;
-    }
-
-    public string StripHTML(string input)
-    {
-        return Regex.Replace(input, "<.*?>", String.Empty);
     }
 }

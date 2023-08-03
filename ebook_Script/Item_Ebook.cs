@@ -22,7 +22,7 @@ public class Item_Ebook : MonoBehaviour
         }
         else
         {
-            GameObject.Find("App").GetComponent<App>().show_eBook_info(this);
+           // GameObject.Find("App").GetComponent<App>().show_eBook_info(this);
         }
         
     }
