@@ -20,6 +20,7 @@ public class App : MonoBehaviour
     public GameObject prefab_item_main;
     public GameObject prefab_item_ebook_more;
     public ScrollRect rect_scroll_main;
+    public AudioSource sound_music_background;
 
     private string key_category_ebook_show="";
     private Carrot.Carrot_Box list_box_category_ebook = null;
@@ -31,6 +32,7 @@ public class App : MonoBehaviour
         this.panel_ebook_read.gameObject.SetActive(false);
 
         this.carrot.Load_Carrot(this.check_exit_app);
+        this.carrot.game.load_bk_music(this.sound_music_background);
 
         this.GetComponent<Ebookmark>().load_ebook_mark();
         if (PlayerPrefs.GetString("lang") == "")
@@ -72,61 +74,72 @@ public class App : MonoBehaviour
             if (task.IsCompleted)
             {
                 this.carrot.hide_loading();
-                this.carrot.clear_contain(this.tr_area_all_item);
                 QuerySnapshot ebookSnapshots = task.Result;
 
-                foreach (DocumentSnapshot ebookDoc in ebookSnapshots)
+                if (ebookSnapshots.Count > 0)
                 {
-                    IDictionary data_ebook = ebookDoc.ToDictionary();
-                    data_ebook["id"] = ebookDoc.Id;
-                    GameObject obj_ebook = Instantiate(this.prefab_item_ebook);
-                    obj_ebook.transform.SetParent(this.tr_area_all_item);
-                    obj_ebook.transform.localPosition = new Vector3(obj_ebook.transform.localPosition.x, obj_ebook.transform.localPosition.y, 0f);
-                    obj_ebook.transform.localScale = new Vector3(1f, 1f, 1f);
-                    Item_Ebook item_ebook = obj_ebook.GetComponent<Item_Ebook>();
-                    item_ebook.data = data_ebook;
-                    item_ebook.s_id = data_ebook["id"].ToString();
-                    item_ebook.s_lang = data_ebook["lang"].ToString();
-                    if (data_ebook["title"] != null) item_ebook.txt_name.text = data_ebook["title"].ToString();
-                    if (data_ebook["author"] != null) item_ebook.txt_tip.text = data_ebook["author"].ToString();
-                    item_ebook.change_theme(GetComponent<Color_Theme>().get_is_sun(), GetComponent<Color_Theme>().color_txt_title_sun);
+                    this.carrot.clear_contain(this.tr_area_all_item);
+                    foreach (DocumentSnapshot ebookDoc in ebookSnapshots)
+                    {
+                        IDictionary data_ebook = ebookDoc.ToDictionary();
+                        data_ebook["id"] = ebookDoc.Id;
+                        GameObject obj_ebook = Instantiate(this.prefab_item_ebook);
+                        obj_ebook.transform.SetParent(this.tr_area_all_item);
+                        obj_ebook.transform.localPosition = new Vector3(obj_ebook.transform.localPosition.x, obj_ebook.transform.localPosition.y, 0f);
+                        obj_ebook.transform.localScale = new Vector3(1f, 1f, 1f);
+                        Item_Ebook item_ebook = obj_ebook.GetComponent<Item_Ebook>();
+                        item_ebook.data = data_ebook;
+                        item_ebook.s_id = data_ebook["id"].ToString();
+                        item_ebook.s_lang = data_ebook["lang"].ToString();
+                        if (data_ebook["title"] != null) item_ebook.txt_name.text = data_ebook["title"].ToString();
+                        if (data_ebook["author"] != null) item_ebook.txt_tip.text = data_ebook["author"].ToString();
+                        item_ebook.change_theme(GetComponent<Color_Theme>().get_is_sun(), GetComponent<Color_Theme>().color_txt_title_sun);
 
-                    string id_cover_ebook = "cover_"+data_ebook["id"].ToString();
-                    Sprite sp_cover_ebook = this.carrot.get_tool().get_sprite_to_playerPrefs(id_cover_ebook);
-                    if (sp_cover_ebook != null)
-                    {
-                        item_ebook.img_avatar.sprite = sp_cover_ebook;
-                        item_ebook.img_avatar.color = Color.white;
-                    }
-                    else
-                    {
-                        if (data_ebook["icon"] != null)
+                        string id_cover_ebook = "cover_" + data_ebook["id"].ToString();
+                        Sprite sp_cover_ebook = this.carrot.get_tool().get_sprite_to_playerPrefs(id_cover_ebook);
+                        if (sp_cover_ebook != null)
                         {
-                            if(data_ebook["icon"].ToString()!="") this.carrot.get_img_and_save_playerPrefs(data_ebook["icon"].ToString(), item_ebook.img_avatar, id_cover_ebook);
+                            item_ebook.img_avatar.sprite = sp_cover_ebook;
+                            item_ebook.img_avatar.color = Color.white;
                         }
+                        else
+                        {
+                            if (data_ebook["icon"] != null)
+                            {
+                                if (data_ebook["icon"].ToString() != "") this.carrot.get_img_and_save_playerPrefs(data_ebook["icon"].ToString(), item_ebook.img_avatar, id_cover_ebook);
+                            }
+                        }
+
+                        item_ebook.set_act_click(() => this.show_info_ebook(obj_ebook.GetComponent<Item_Ebook>()));
                     }
 
-                    item_ebook.set_act_click(() => this.show_info_ebook(obj_ebook.GetComponent<Item_Ebook>()));
+                    Item_book_more item_more_ebook = this.add_item_menu_content();
+                    item_more_ebook.set_title(PlayerPrefs.GetString("ebook_more", "Get more books"));
+                    item_more_ebook.set_tip(PlayerPrefs.GetString("ebook_more_tip", "Click here to get more titles"));
+                    item_more_ebook.set_act_click(() => this.show_list_ebook());
+
+                    Item_book_more item_cat_ebook = this.add_item_menu_content();
+                    item_cat_ebook.set_icon(this.carrot.icon_carrot_all_category);
+                    item_cat_ebook.set_title(PlayerPrefs.GetString("ebook_category", "All Category"));
+                    item_cat_ebook.set_tip(PlayerPrefs.GetString("ebook_category_tip", "List of categories and bookshelf"));
+                    item_cat_ebook.set_act_click(() => this.show_list_category_ebook());
+
+                    Item_book_more item_write_ebook = this.add_item_menu_content();
+                    item_write_ebook.set_icon(this.carrot.icon_carrot_write);
+                    item_write_ebook.set_title(PlayerPrefs.GetString("ebook_write", "Write Ebook"));
+                    item_write_ebook.set_tip(PlayerPrefs.GetString("ebook_write_tip", "Write your own book and publish your own ebook"));
+                    item_write_ebook.set_act_click(() => this.show_list_category_ebook());
+
+                    this.rect_scroll_main.normalizedPosition = new Vector2(this.rect_scroll_main.normalizedPosition.x, 1f);
+                }
+                else
+                {
+                    if(this.key_category_ebook_show=="")
+                        this.carrot.show_msg("Ebook", "No books in your country yet", Carrot.Msg_Icon.Alert);
+                    else
+                        this.carrot.show_msg("Ebook", "There are no e-books in this category!", Carrot.Msg_Icon.Alert);
                 }
 
-                Item_book_more item_more_ebook=this.add_item_menu_content();
-                item_more_ebook.set_title(PlayerPrefs.GetString("ebook_more", "Get more books"));
-                item_more_ebook.set_tip(PlayerPrefs.GetString("ebook_more_tip", "Click here to get more titles"));
-                item_more_ebook.set_act_click(() => this.show_list_ebook());
-
-                Item_book_more item_cat_ebook = this.add_item_menu_content();
-                item_cat_ebook.set_icon(this.carrot.icon_carrot_all_category);
-                item_cat_ebook.set_title(PlayerPrefs.GetString("ebook_category", "All Category"));
-                item_cat_ebook.set_tip(PlayerPrefs.GetString("ebook_category_tip", "List of categories and bookshelf"));
-                item_cat_ebook.set_act_click(()=>this.show_list_category_ebook());
-
-                Item_book_more item_write_ebook = this.add_item_menu_content();
-                item_write_ebook.set_icon(this.carrot.icon_carrot_write);
-                item_write_ebook.set_title(PlayerPrefs.GetString("ebook_write", "Write Ebook"));
-                item_write_ebook.set_tip(PlayerPrefs.GetString("ebook_write_tip", "Write your own book and publish your own ebook"));
-                item_write_ebook.set_act_click(() => this.show_list_category_ebook());
-
-                this.rect_scroll_main.normalizedPosition = new Vector2(this.rect_scroll_main.normalizedPosition.x, 1f);
             }
         });
     }
