@@ -12,6 +12,7 @@ public class App : MonoBehaviour
     public Carrot.Carrot carrot;
     public Panel_ebook_read panel_ebook_read;
     public Ebookmark mark;
+    public Ebook_Write write;
 
     [Header("Obj App")]
     public Sprite icon_cover_ebook_default;
@@ -128,7 +129,7 @@ public class App : MonoBehaviour
                     item_write_ebook.set_icon(this.carrot.icon_carrot_write);
                     item_write_ebook.set_title(PlayerPrefs.GetString("ebook_write", "Write Ebook"));
                     item_write_ebook.set_tip(PlayerPrefs.GetString("ebook_write_tip", "Write your own book and publish your own ebook"));
-                    item_write_ebook.set_act_click(() => this.show_list_category_ebook());
+                    item_write_ebook.set_act_click(() => this.write.add_ebook());
 
                     this.rect_scroll_main.normalizedPosition = new Vector2(this.rect_scroll_main.normalizedPosition.x, 1f);
                 }
