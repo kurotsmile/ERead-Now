@@ -16,6 +16,7 @@ public class App : MonoBehaviour
 
     [Header("Obj App")]
     public Sprite icon_cover_ebook_default;
+    public Sprite sp_icon_book;
     public Transform tr_area_all_item;
     public GameObject prefab_item_ebook;
     public GameObject prefab_item_main;
