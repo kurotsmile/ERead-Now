@@ -6,7 +6,6 @@ public class Panel_ebook_read : MonoBehaviour
 {
     [Header("Obj App")]
     public App app;
-    public Color_Theme theme;
 
     [Header("Obj ERead")]
     public Sprite icon_list_index;
@@ -119,10 +118,6 @@ public class Panel_ebook_read : MonoBehaviour
 
         IDictionary chapter = (IDictionary)this.contents_ebook[index_p];
         inp_content.text = this.app.StripHTML(chapter["content"].ToString());
-        if (this.theme.get_is_sun())
-            this.txt_content.color = Color.black;
-        else
-            this.txt_content.color = Color.white;
     }
 
     public void check_show_page_nav()
@@ -207,14 +202,6 @@ public class Panel_ebook_read : MonoBehaviour
 
     public void btn_sel_font_family(int index)
     {
-        for(int i = 0; i < this.btn_font_family.Length; i++)
-        {
-            if (this.theme.get_is_sun())
-                this.btn_font_family[i].color = this.theme.color_btn_sun;
-            else
-                this.btn_font_family[i].color = this.theme.color_btn_moon;
-        }
-
         this.btn_font_family[index].color = this.color_sel_font_family;
         this.f_font_family_index_setting = index;
         this.f_font_txt_show.font = this.f_txt_font_family[index].font;

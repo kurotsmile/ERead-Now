@@ -30,9 +30,7 @@ public class App : MonoBehaviour
 
     void Start()
     {
-        this.GetComponent<Color_Theme>().load_theme();
         this.panel_ebook_read.gameObject.SetActive(false);
-
         this.carrot.Load_Carrot(this.check_exit_app);
         this.carrot.game.load_bk_music(this.sound_music_background);
 
@@ -95,7 +93,6 @@ public class App : MonoBehaviour
                         item_ebook.s_lang = data_ebook["lang"].ToString();
                         if (data_ebook["title"] != null) item_ebook.txt_name.text = data_ebook["title"].ToString();
                         if (data_ebook["author"] != null) item_ebook.txt_tip.text = data_ebook["author"].ToString();
-                        item_ebook.change_theme(GetComponent<Color_Theme>().get_is_sun(), GetComponent<Color_Theme>().color_txt_title_sun);
 
                         string id_cover_ebook = "cover_" + data_ebook["id"].ToString();
                         Sprite sp_cover_ebook = this.carrot.get_tool().get_sprite_to_playerPrefs(id_cover_ebook);
