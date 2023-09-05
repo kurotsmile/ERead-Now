@@ -112,7 +112,7 @@ public class App : MonoBehaviour
                         item_ebook.set_act_click(() => this.show_info_ebook(obj_ebook.GetComponent<Item_Ebook>()));
                     }
 
-                    Item_book_more item_more_ebook = this.add_item_menu_content();
+                    Item_book_more item_more_ebook = this.add_item_menu_cont ent();
                     item_more_ebook.set_title(PlayerPrefs.GetString("ebook_more", "Get more books"));
                     item_more_ebook.set_tip(PlayerPrefs.GetString("ebook_more_tip", "Click here to get more titles"));
                     item_more_ebook.set_act_click(() => this.show_list_ebook());
